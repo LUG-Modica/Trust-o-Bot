@@ -69,6 +69,7 @@ def verify_captcha(update: Update, context: CallbackContext) -> None:
         captcha_to_verify[1] -= 1
         update.message.reply_text("Tentativi rimasti: " + str(captcha_to_verify[1]))
     else:
+        update.effective_chat.kick_member(update.effective_user.id)
         update.message.reply_text("Kick!")
         ConversationHandler.END
 
