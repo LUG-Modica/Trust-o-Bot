@@ -60,18 +60,18 @@ def verify_captcha(update: Update, context: CallbackContext) -> None:
     print("Sono in verify captcha")
     captcha_to_verify = captcha_maps[str(update.effective_user.id)]
     if captcha_to_verify is None:
-        return
+        return None
     if str(captcha_to_verify[0]) == update.message.text:
         captcha_maps.pop(str(update.effective_user.id))
         update.message.reply_text("Benvenuto nel gruppo!")
-        ConversationHandler.END
+        return ConversationHandler.END
     elif captcha_to_verify[1] > 0:
         captcha_to_verify[1] -= 1
         update.message.reply_text("Tentativi rimasti: " + str(captcha_to_verify[1]))
     else:
         update.effective_chat.kick_member(update.effective_user.id)
         update.message.reply_text("Kick!")
-        ConversationHandler.END
+        return ConversationHandler.END
 
 def main():
     """Start the bot."""
