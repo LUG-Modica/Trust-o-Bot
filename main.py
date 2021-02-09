@@ -44,6 +44,9 @@ def help_command(update: Update, context: CallbackContext) -> None:
 def ping(update: Update, context: CallbackContext) -> None:
     update.message.reply_text('Pong')
 
+# kick member
+def kick(update: Update, context: CallbackContext) -> None:
+    update.effective_chat.kick_member(update.message.reply_to_message.from_user.id)
 def captcha(update: Update, context: CallbackContext) -> None:
     print("Sono in captcha")
     # captcha function
@@ -86,6 +89,8 @@ def main():
 
     # on different commands - answer in Telegram
     dispatcher.add_handler(CommandHandler("ping", ping))
+    # kick a member
+    dispatcher.add_handler(CommandHandler("kick", kick))
     #captcha handling for new members
     dispatcher.add_handler(ConversationHandler(
         entry_points=[MessageHandler(Filters.status_update.new_chat_members,captcha)],
