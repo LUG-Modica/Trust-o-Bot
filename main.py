@@ -59,7 +59,8 @@ def compiler(update: Update, context: CallbackContext) -> None:
         print(e.output)
     if ret == 0:
         fd=open(output_bin,"rb")
-        update.message.reply_text(output_str.decode("utf-8"))
+        if len(output_str) != 0:
+            update.message.reply_text(output_str.decode("utf-8"))
         update.message.reply_document(fd)
         fd.close()
     else:
