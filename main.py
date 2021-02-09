@@ -5,6 +5,8 @@
 # This program is dedicated to the public domain under the CC0 license.
 
 import logging
+import os
+import subprocess
 import random
 import configparser
 import string
@@ -37,12 +39,35 @@ logger = logging.getLogger(__name__)
 # Define a few command handlers. These usually take the two arguments update and
 # context. Error handlers also receive the raised TelegramError object in error.
 
-def help_command(update: Update, context: CallbackContext) -> None:
-    """Send a message when the command /help is issued."""
-    update.message.reply_text('Help!')
-
 def ping(update: Update, context: CallbackContext) -> None:
     update.message.reply_text('Pong')
+#compile a given C file
+def compiler(update: Update, context: CallbackContext) -> None:
+    params=update.message.text.split(" ")
+    if len(params) >= 2:
+        output_bin=params[1]
+    else:
+        output_bin="a.out"
+    update.message.reply_text('Compiling...')
+    print("Saving file in local directory")
+    update.message.reply_to_message.document.get_file().download("tmp.c")
+    print("Starting compilation...")
+    ret=os.system("gcc tmp.c -o " + output_bin)
+    try:
+        output_str=subprocess.check_output(['gcc','tmp.c','-Wall','-o',output_bin],stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as e:
+        print(e.output)
+    if ret == 0:
+        fd=open(output_bin,"rb")
+        update.message.reply_text(output_str.decode("utf-8"))
+        update.message.reply_document(fd)
+        fd.close()
+    else:
+        update.message.reply_text("Errore durante la compilazione: " + ret)
+    print("End of compilation...")
+    os.system("rm tmp.c " + output_bin)
+    print("Cleaned, exiting...")
+    return
 
 # kick member
 def kick(update: Update, context: CallbackContext) -> None:
@@ -89,6 +114,8 @@ def main():
 
     # on different commands - answer in Telegram
     dispatcher.add_handler(CommandHandler("ping", ping))
+    # info about the server
+    dispatcher.add_handler(CommandHandler("compile", compiler))
     # kick a member
     dispatcher.add_handler(CommandHandler("kick", kick))
     #captcha handling for new members
