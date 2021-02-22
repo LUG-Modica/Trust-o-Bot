@@ -35,12 +35,23 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-
-# Define a few command handlers. These usually take the two arguments update and
-# context. Error handlers also receive the raised TelegramError object in error.
-
 def ping(update: Update, context: CallbackContext) -> None:
     update.message.reply_text('Pong')
+def everyone(update: Update, context: CallbackContext) -> None: #notifies everyone about a message
+    update.message.pin(disable_notification=False)
+
+def source(update: Update, context: CallbackContext) -> None:  #display help output
+    update.message.reply_markdown("[Codice Sorgente](https://github.com/LUG-Modica/Trust-o-Bot)")
+
+def help(update: Update, context: CallbackContext) -> None:  #display help output
+    update.message.reply_text("Ecco una lista dei comandi:\n"
+                                  "/ping : Usalo per vedere se il bot è attivo\n"
+                                  "/compile <nome_output>: Usalo per compilare un file in C\n"
+                                  "/everyone <messaggio> : Usalo per menzionare tutti in un messaggio\n"
+                                  "/kick in risposta : Usalo in risposta ad un messaggio per kickare un intruso\n"
+                                  "/source : Usalo per ottenere il link al codice sorgente del bot\n"
+                                  "/help : Usalo per mostrare questo messaggio\n"
+                                  )
 #compile a given C file
 def compiler(update: Update, context: CallbackContext) -> None:
     params=update.message.text.split(" ")
@@ -73,34 +84,44 @@ def compiler(update: Update, context: CallbackContext) -> None:
 # kick member
 def kick(update: Update, context: CallbackContext) -> None:
     update.effective_chat.kick_member(update.message.reply_to_message.from_user.id)
+
 def captcha(update: Update, context: CallbackContext) -> None:
-    print("Sono in captcha")
-    # captcha function
-    captcha_string = ''.join(random.SystemRandom().choice(string.ascii_letters + string.digits) for _ in range(5))
-    image = ImageCaptcha()
-    image.write(str(captcha_string),CAPTCHA_FILE)
-    fd = open(CAPTCHA_FILE,'rb')
-    update.message.reply_photo(fd)
-    #append to map user_id - captcha_string
-    captcha_maps[str(update.effective_user.id)] = [str(captcha_string),NUMBER_TEMPTS]
-    return REPLY
+    #append to map user_id - captcha_string,attempts_number
+    if not update.message.new_chat_members: #if list is empty
+        captcha_string = ''.join(random.SystemRandom().choice(string.ascii_letters + string.digits) for _ in range(5))
+        image = ImageCaptcha()
+        image.write(str(captcha_string),CAPTCHA_FILE)
+        fd = open(CAPTCHA_FILE,'rb')
+        update.message.reply_photo(fd).reply_markdown("Benvenuto nel gruppo " + update.effective_user.mention_markdown() + "!\n"
+                                                "Per favore completa il CAPTCHA")
+        captcha_maps[str(update.effective_user.id)] = [str(captcha_string),NUMBER_TEMPTS]
+    else: #if list is not empty, then users were added and we need to iterate over them and generate captchas
+        for user in update.message.new_chat_members:
+            captcha_string = ''.join(random.SystemRandom().choice(string.ascii_letters + string.digits) for _ in range(5))
+            image = ImageCaptcha()
+            image.write(str(captcha_string),CAPTCHA_FILE)
+            fd = open(CAPTCHA_FILE,'rb')
+            update.message.reply_photo(fd).reply_markdown("Benvenuto nel gruppo " + user.mention_markdown() + "!\n"
+                                                    "Per favore completa il CAPTCHA")
+            captcha_maps[str(user.id)] = [str(captcha_string),NUMBER_TEMPTS]
+    return
 
 def verify_captcha(update: Update, context: CallbackContext) -> None:
-    print("Sono in verify captcha")
     captcha_to_verify = captcha_maps[str(update.effective_user.id)]
     if captcha_to_verify is None:
         return None
     if str(captcha_to_verify[0]) == update.message.text:
         captcha_maps.pop(str(update.effective_user.id))
         update.message.reply_text("Benvenuto nel gruppo!")
-        return ConversationHandler.END
-    elif captcha_to_verify[1] > 0:
+    elif captcha_to_verify[1] > 0: # If message is wrong
         captcha_to_verify[1] -= 1
         update.message.reply_text("Tentativi rimasti: " + str(captcha_to_verify[1]))
+        update.message.delete() #deletes the message if wrong, in order to avoid spammers
     else:
         update.effective_chat.kick_member(update.effective_user.id)
+        captcha_maps.pop(str(update.effective_user.id))
         update.message.reply_text("Kick!")
-        return ConversationHandler.END
+    return
 
 def main():
     """Start the bot."""
@@ -115,19 +136,30 @@ def main():
 
     # on different commands - answer in Telegram
     dispatcher.add_handler(CommandHandler("ping", ping))
+    # display source code link
+    dispatcher.add_handler(CommandHandler("source", source))
+    # display help output
+    dispatcher.add_handler(CommandHandler("help", help))
+    # calls everyone in the group
+    dispatcher.add_handler(CommandHandler("everyone", everyone))
     # info about the server
     dispatcher.add_handler(CommandHandler("compile", compiler))
     # kick a member
     dispatcher.add_handler(CommandHandler("kick", kick))
-    #captcha handling for new members
+    #Greeter : Generates captchas only
     dispatcher.add_handler(ConversationHandler(
         entry_points=[MessageHandler(Filters.status_update.new_chat_members,captcha)],
         states={
-            REPLY: [MessageHandler(Filters.all,verify_captcha)]
         },
-        fallbacks=[None]
+        fallbacks=[None],per_chat=True,per_user=False #everyone in the chat can trigger the state REPLY, but if not in the list of unverified then nothing happens
     ))
-
+    # Verifier : If you still have to verify captcha then this will check for it
+    dispatcher.add_handler(ConversationHandler(
+        entry_points=[MessageHandler(Filters.all,verify_captcha)],
+        states={
+        },
+        fallbacks=[None],per_chat=True,per_user=False #everyone in the chat can trigger the state REPLY, but if not in the list of unverified then nothing happens
+    ))
     # Start the Bot
     updater.start_polling()
 
