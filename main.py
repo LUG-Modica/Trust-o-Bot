@@ -22,6 +22,8 @@ from telegram.ext import (
     ConversationHandler,
     CallbackContext,
 )
+from csv_handling import * # our module for csv data
+
 parser = configparser.ConfigParser()
 parser.read('config.ini')
 CAPTCHA_FILE=parser["Settings"]["foto"]
@@ -85,6 +87,29 @@ def compiler(update: Update, context: CallbackContext) -> None:
 def kick(update: Update, context: CallbackContext) -> None:
     update.effective_chat.kick_member(update.message.reply_to_message.from_user.id)
 
+# shows reputation about all members
+def hall_of_fame(update: Update, context: CallbackContext) -> None:
+    message = "Reputazione di tutti i membri\n" # creating the message
+    data = get_users_reputation()
+    message += data
+    update.message.reply_text(message)
+
+# increase reputation of given user
+def add(update: Update, context: CallbackContext) -> None:
+    username=update.message.reply_to_message.from_user.username
+    add_reputation(username,1) # add reputation
+    message = "Reputazione aggiornata!\n"
+    message += get_user_reputation(username)
+    update.message.reply_text(message)
+
+# decrease reputation of given user
+def dec(update: Update, context: CallbackContext) -> None:
+    username=update.message.reply_to_message.from_user.username
+    add_reputation(username,-1) # add reputation
+    message = "Reputazione aggiornata!\n"
+    message += get_user_reputation(username)
+    update.message.reply_text(message)
+
 def captcha(update: Update, context: CallbackContext) -> None:
     #append to map user_id - captcha_string,attempts_number
     if not update.message.new_chat_members: #if list is empty
@@ -146,6 +171,12 @@ def main():
     dispatcher.add_handler(CommandHandler("compile", compiler))
     # kick a member
     dispatcher.add_handler(CommandHandler("kick", kick))
+    # get csv data from all members
+    dispatcher.add_handler(CommandHandler("halloffame", hall_of_fame))
+    # increase reputation 
+    dispatcher.add_handler(CommandHandler("add", add))
+    # decrease reputation 
+    dispatcher.add_handler(CommandHandler("dec", dec))
     #Greeter : Generates captchas only
     dispatcher.add_handler(ConversationHandler(
         entry_points=[MessageHandler(Filters.status_update.new_chat_members,captcha)],
