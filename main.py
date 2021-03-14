@@ -52,6 +52,9 @@ def help(update: Update, context: CallbackContext) -> None:  #display help outpu
                                   "/everyone <messaggio> : Usalo per menzionare tutti in un messaggio\n"
                                   "/kick in risposta : Usalo in risposta ad un messaggio per kickare un intruso\n"
                                   "/source : Usalo per ottenere il link al codice sorgente del bot\n"
+                                  "/halloffame : Usalo per ottenere una lista con la reputazione di tutti i membri\n"
+                                  "/add in risposta ad un messaggio : Usalo per incrementare di 1 la reputazione dell'utente\n"
+                                  "/dec in risposta ad un messaggio : Usalo per decrementare di 1 la reputazione dell'utente\n"
                                   "/help : Usalo per mostrare questo messaggio\n"
                                   )
 #compile a given C file
