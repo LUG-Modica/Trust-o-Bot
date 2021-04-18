@@ -23,6 +23,7 @@ from telegram.ext import (
     CallbackContext,
 )
 from csv_handling import * # our module for csv data
+from INGEGGGGGNERIADELSOFTUER import *
 
 parser = configparser.ConfigParser()
 parser.read('config.ini')
@@ -55,6 +56,9 @@ def help(update: Update, context: CallbackContext) -> None:  #display help outpu
                                   "/halloffame : Usalo per ottenere una lista con la reputazione di tutti i membri\n"
                                   "/add in risposta ad un messaggio : Usalo per incrementare di 1 la reputazione dell'utente\n"
                                   "/dec in risposta ad un messaggio : Usalo per decrementare di 1 la reputazione dell'utente\n"
+                                  "/addmeeting <titolo> <data> : Usalo per aggiungere un meeting\n"
+                                  "/deletemmeting <titolo> (si è un id) : Usalo per rimuovere almeno un meeting\n"
+                                  "/showmeeting : Usalo per vedere i meeting schedulati\n"
                                   "/help : Usalo per mostrare questo messaggio\n"
                                   )
 #compile a given C file
@@ -176,10 +180,18 @@ def main():
     dispatcher.add_handler(CommandHandler("kick", kick))
     # get csv data from all members
     dispatcher.add_handler(CommandHandler("halloffame", hall_of_fame))
-    # increase reputation 
+    # increase reputation
     dispatcher.add_handler(CommandHandler("add", add))
-    # decrease reputation 
+    # decrease reputation
     dispatcher.add_handler(CommandHandler("dec", dec))
+    # meetings scheduling
+    dispatcher.add_handler(CommandHandler("remembermeeting", remember_meeting))
+    # delete meeting
+    dispatcher.add_handler(CommandHandler("deletemeeting", delete_meeting))
+    # show meeting
+    dispatcher.add_handler(CommandHandler("showmeeting", show_meeting))
+
+
     #Greeter : Generates captchas only
     dispatcher.add_handler(ConversationHandler(
         entry_points=[MessageHandler(Filters.status_update.new_chat_members,captcha)],
