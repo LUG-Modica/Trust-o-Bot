@@ -23,6 +23,7 @@ from telegram.ext import (
     CallbackContext,
 )
 from csv_handling import * # our module for csv data
+from threading import Thread
 from INGEGGGGGNERIADELSOFTUER import *
 
 parser = configparser.ConfigParser()
@@ -58,7 +59,10 @@ def help(update: Update, context: CallbackContext) -> None:  #display help outpu
                                   "/dec in risposta ad un messaggio : Usalo per decrementare di 1 la reputazione dell'utente\n"
                                   "/addmeeting <titolo> <data> : Usalo per aggiungere un meeting\n"
                                   "/deletemmeting <titolo> (si è un id) : Usalo per rimuovere almeno un meeting\n"
-                                  "/showmeeting : Usalo per vedere i meeting schedulati\n"
+                                  "/showmeeting : Usalo per vedere i meeting"
+					"schedulati\n"
+                                  "/addguest <titolo> <guest1> <guest2> ... : "
+				"Usalo per aggiungere partecipanti ai meetings"
                                   "/help : Usalo per mostrare questo messaggio\n"
                                   )
 #compile a given C file
@@ -162,6 +166,8 @@ def main():
     # Post version 12 this will no longer be necessary
     tok = str(parser["Settings"]["Token"])
     updater = Updater(token=str(tok), use_context=True)
+    t = Thread(target = notifier_thread, args =(updater.bot, ))
+    t.start() 
 
     # Get the dispatcher to register handlers
     dispatcher = updater.dispatcher
@@ -185,11 +191,13 @@ def main():
     # decrease reputation
     dispatcher.add_handler(CommandHandler("dec", dec))
     # meetings scheduling
-    dispatcher.add_handler(CommandHandler("remembermeeting", remember_meeting))
+    dispatcher.add_handler(CommandHandler("addmeeting", remember_meeting))
     # delete meeting
     dispatcher.add_handler(CommandHandler("deletemeeting", delete_meeting))
     # show meeting
     dispatcher.add_handler(CommandHandler("showmeeting", show_meeting))
+    # add guest
+    dispatcher.add_handler(CommandHandler("addguest", add_guest_to_meeting))
 
 
     #Greeter : Generates captchas only

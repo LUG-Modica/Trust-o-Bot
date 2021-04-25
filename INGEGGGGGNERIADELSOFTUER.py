@@ -1,3 +1,4 @@
+import time
 import json
 from telegram import Update
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
@@ -10,9 +11,12 @@ from telegram.ext import (
     ConversationHandler,
     CallbackContext,
 )
+from datetime import datetime
+from datetime import date
 
 
 FILENAME = "meetings.json"
+CHAT_ID = -1001341923208
 
 def write_json(data):
     with open(FILENAME, "w") as f:
@@ -20,8 +24,8 @@ def write_json(data):
 
 def remember_meeting(update: Update, context: CallbackContext) -> None:
     messaggio = update.message.text
-    campi = messaggio.split(" ") #/remembermeeting <titolo> <data>
-    add_meeting(campi[1], campi[2])
+    campi = messaggio.split(" ") #/remembermeeting <titolo> <data> <ora>
+    add_meeting(campi[1], campi[2], campi[3])
     update.message.reply_text("Ho aggiornato il database!")
     return
 def delete_meeting(update: Update, context: CallbackContext) -> None:
@@ -30,6 +34,12 @@ def delete_meeting(update: Update, context: CallbackContext) -> None:
     del_meeting(campi[1])
     update.message.reply_text("Ho aggiornato il database!")
     return
+def add_guest_to_meeting(update: Update, context: CallbackContext) -> None:
+    messaggio = update.message.text
+    campi = messaggio.split(" ") #/addguest <title> <guest1> <guest2> ...
+    for i in range(2,len(campi)):
+	    add_guest(str(campi[1]),str(campi[i]))
+    update.message.reply_text("Ho aggiornato il database!")
 
 def show_meeting(update: Update, context: CallbackContext) -> None:
     messaggio =  ""
@@ -44,14 +54,14 @@ def show_meeting(update: Update, context: CallbackContext) -> None:
     update.message.reply_text(messaggio)
 
     return
-def add_meeting(title, date):
-    meeting = {'title' : title, 'date' : date}
-    with open(FILENAME, "r+") as f:
-        data = json.load(f)
-        temp = data['meetings']
-        temp.append(meeting)
-    write_json(data)
-    return
+def add_meeting(title, date, time):
+	meeting = {'title' : title, 'date' : date,'time' : time, 'guests' : [] }
+	with open(FILENAME, "r+") as f:
+		data = json.load(f)
+		temp = data['meetings']
+		temp.append(meeting)
+	write_json(data)
+	return
 
 def del_meeting(title):
     with open(FILENAME, "r+") as f:
@@ -83,7 +93,85 @@ def edit_date(title, new_date):
     write_json(data)
     return
 
-del_meeting("DISTROWAR")
-add_meeting("ciao", "domani")
-edit_title("ciao", "CIAO")
-edit_date("CIAO", "dopodomani" )
+def add_guest(title, guest_username):
+	with open(FILENAME, "r+") as f:
+		data = json.load(f)
+		temp = data['meetings']
+		meeting = 0
+		for object in temp:
+			if object['title'] == title:
+				meeting = object
+				break
+		meeting['guests'].append(guest_username)
+	write_json(data)
+
+
+def days_between(d1, d2):
+    d1 = datetime.strptime(d1, "%d/%m/%Y")
+    d2 = datetime.strptime(d2, "%d/%m/%Y")
+    return abs((d2 - d1).days)
+
+def today_date():
+	today = date.today()
+	d1 = today.strftime("%d/%m/%Y")
+	return d1
+
+def is_time_to_send():
+	now = datetime.now()
+	hour = int(now.strftime("%H"))
+	if (hour == 12):
+		return True
+	return False
+
+def notifier_thread(bot):
+	while True:
+		time.sleep(30*60)
+
+		if is_time_to_send() == False:
+			continue
+
+		with open(FILENAME, "r+") as f:
+			data = json.load(f)
+			temp = data['meetings']
+			for meeting in temp:
+				print(today_date())
+				print(meeting['date'])
+				if ( days_between(today_date(),meeting['date'])\
+					<= -1):
+					del_meeting(meeting['title'])
+					continue
+				remain = \
+				days_between(today_date(),meeting['date'])
+				print(remain)
+				reminder_text = "Giorni rimanenti a " +\
+					str(meeting['title']) + " " +\
+						str(remain) +\
+						"\nAlle " + str(meeting['time'])
+				reminder_text += "\nPartecipanti:\n"
+				for guest in meeting['guests']:
+					reminder_text += guest + "\n"
+				bot.send_message(CHAT_ID,reminder_text)
+	pass
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
