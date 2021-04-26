@@ -133,3 +133,4 @@ dmypy.json
 .jpeg
 .png
 .ini
+*.json

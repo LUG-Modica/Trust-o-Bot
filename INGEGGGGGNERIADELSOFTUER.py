@@ -50,6 +50,10 @@ def show_meeting(update: Update, context: CallbackContext) -> None:
             for object in temp:
                 meeting_string += "Titolo: " + object['title'] + "\n"
                 meeting_string += "Data: " + object['date'] + "\n"
+                meeting_string += "Ora: " + object['time'] + "\n"
+                meeting_string += "Partecipanti: "
+                for guest in object['guests']:
+                    meeting_string += guest + "\n"
             messaggio += meeting_string + "\n"
     update.message.reply_text(messaggio)
 
