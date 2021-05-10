@@ -80,6 +80,7 @@ def compiler(update: Update, context: CallbackContext) -> None:
     try:
         output_str=subprocess.check_output(['gcc','tmp.c','-Wall','-o',output_bin],stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as e:
+        update.message.reply_text(str(e.output))
         print(e.output)
     if ret == 0:
         fd=open(output_bin,"rb")
@@ -88,7 +89,7 @@ def compiler(update: Update, context: CallbackContext) -> None:
         update.message.reply_document(fd)
         fd.close()
     else:
-        update.message.reply_text("Errore durante la compilazione: " + ret)
+        update.message.reply_text("Errore durante la compilazione: " + str(ret))
     print("End of compilation...")
     os.system("rm tmp.c " + output_bin)
     print("Cleaned, exiting...")
@@ -167,7 +168,7 @@ def main():
     tok = str(parser["Settings"]["Token"])
     updater = Updater(token=str(tok), use_context=True)
     t = Thread(target = notifier_thread, args =(updater.bot, ))
-    t.start() 
+    t.start()
 
     # Get the dispatcher to register handlers
     dispatcher = updater.dispatcher
@@ -181,7 +182,8 @@ def main():
     # calls everyone in the group
     dispatcher.add_handler(CommandHandler("everyone", everyone))
     # info about the server
-    dispatcher.add_handler(CommandHandler("compile", compiler))
+    # WARNING HARMFUL COMMAND
+    #dispatcher.add_handler(CommandHandler("compile", compiler))
     # kick a member
     dispatcher.add_handler(CommandHandler("kick", kick))
     # get csv data from all members
