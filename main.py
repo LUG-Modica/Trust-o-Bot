@@ -125,7 +125,7 @@ def dec(update: Update, context: CallbackContext) -> None:
 def captcha(update: Update, context: CallbackContext) -> None:
     #append to map user_id - captcha_string,attempts_number
     if not update.message.new_chat_members: #if list is empty
-        captcha_string = ''.join(random.SystemRandom().choice(string.ascii_letters + string.digits) for _ in range(5))
+        captcha_string = ''.join(random.SystemRandom().choice(string.digits) for _ in range(5))
         image = ImageCaptcha()
         image.write(str(captcha_string),CAPTCHA_FILE)
         fd = open(CAPTCHA_FILE,'rb')
@@ -134,7 +134,7 @@ def captcha(update: Update, context: CallbackContext) -> None:
         captcha_maps[str(update.effective_user.id)] = [str(captcha_string),NUMBER_TEMPTS]
     else: #if list is not empty, then users were added and we need to iterate over them and generate captchas
         for user in update.message.new_chat_members:
-            captcha_string = ''.join(random.SystemRandom().choice(string.ascii_letters + string.digits) for _ in range(5))
+            captcha_string = ''.join(random.SystemRandom().choice(string.digits) for _ in range(5))
             image = ImageCaptcha()
             image.write(str(captcha_string),CAPTCHA_FILE)
             fd = open(CAPTCHA_FILE,'rb')
